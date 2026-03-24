@@ -1,0 +1,14 @@
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de XAMPP
+xampp/
+*.log
+
+# Archivos temporales
+*.tmp
+*.cache
+
+# Archivos de configuración local
+config/database.php

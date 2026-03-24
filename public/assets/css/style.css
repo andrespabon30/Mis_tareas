@@ -1,0 +1,81 @@
+/* Estilos para prioridades */
+.prioridad-alta {
+    border-left: 4px solid #f72585;
+    background: #fff5f5;
+}
+
+.prioridad-media {
+    border-left: 4px solid #f8961e;
+}
+
+.prioridad-baja {
+    border-left: 4px solid #4cc9f0;
+}
+
+.tarea-vencida {
+    background: #ffe5e5 !important;
+}
+
+/* Paginación */
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.pagination a, .pagination span {
+    padding: 8px 15px;
+    background: white;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #4361ee;
+    transition: all 0.3s ease;
+}
+
+.pagination a:hover {
+    background: linear-gradient(135deg, #4361ee, #3f37c9);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.pagination .active {
+    background: linear-gradient(135deg, #4361ee, #3f37c9);
+    color: white;
+}
+
+/* Botones de exportación */
+.export-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+/* Estilos para impresión */
+@media print {
+    .no-print, .filters, .btn-modern, .pagination, .export-buttons {
+        display: none;
+    }
+    
+    body {
+        background: white;
+        padding: 0;
+    }
+    
+    .card-modern {
+        box-shadow: none;
+        margin: 0;
+        padding: 0;
+    }
+    
+    .table-modern {
+        width: 100%;
+    }
+    
+    .table-modern th {
+        background: #f0f0f0;
+        color: black;
+    }
+}
