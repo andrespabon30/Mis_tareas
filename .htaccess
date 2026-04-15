@@ -1,0 +1,19 @@
+# Proteger archivos sensibles
+<FilesMatch "\.(sql|log|ini|conf)$">
+    Require all denied
+</FilesMatch>
+
+# Prevenir listado de directorios
+Options -Indexes
+
+# Proteger contra XSS
+<IfModule mod_headers.c>
+    Header set X-XSS-Protection "1; mode=block"
+    Header set X-Frame-Options "DENY"
+    Header set X-Content-Type-Options "nosniff"
+</IfModule>
+
+# Redirigir a HTTPS (cuando tengas SSL)
+# RewriteEngine On
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]

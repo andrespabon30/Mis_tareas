@@ -4,6 +4,11 @@ if(!isset($_SESSION['usuario_id'])){
     header("Location: login.php"); 
     exit();
 }
+if ($_SESSION['ip'] !== $_SERVER['REMOTE_ADDR'] || $_SESSION['user_agent'] !== $_SERVER['HTTP_USER_AGENT']) {
+    session_destroy();
+    header("Location: login.php?error=sesion");
+    exit();
+}
 
 require_once '../../../config/database.php';
 $db = (new Database())->connect();

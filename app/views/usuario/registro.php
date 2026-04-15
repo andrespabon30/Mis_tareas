@@ -1,4 +1,8 @@
-<?php session_start(); ?>
+<?php 
+session_start();
+require_once '../../../config/seguridad.php';
+$csrf_token = Seguridad::generarTokenCSRF();
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -29,7 +33,10 @@
         .login-link a:hover { text-decoration: underline; }
         .alert { padding: 12px 15px; border-radius: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
         .alert-error { background: #fee2e2; color: #dc2626; border-left: 4px solid #dc2626; }
-        @media (max-width: 768px) { .card-header-modern { padding: 25px; } .card-body-modern { padding: 25px; } }
+        .password-requirements { font-size: 0.7rem; color: #6c757d; margin-top: 5px; }
+        .password-requirements ul { margin-left: 20px; margin-top: 5px; }
+        .valid { color: #2e7d32; }
+        .invalid { color: #dc2626; }
     </style>
 </head>
 <body>
@@ -37,38 +44,63 @@
         <div class="card-modern">
             <div class="card-header-modern">
                 <h2><i class="fas fa-user-plus"></i> Crear Cuenta</h2>
-                <p>Regístrate para comenzar a organizar tus tareas</p>
+                <p>Regístrate de forma segura</p>
             </div>
             <div class="card-body-modern">
                 <?php if(isset($_GET['error'])): ?>
-                <div class="alert alert-error">
-                    <i class="fas fa-exclamation-circle"></i>
-                    <?php 
-                        if($_GET['error'] == 'email_existe') {
-                            echo "El email ya está registrado. Por favor, usa otro email.";
-                        } else {
-                            echo "Error al registrar. Intenta nuevamente.";
-                        }
-                    ?>
-                </div>
+                    <?php if($_GET['error'] == 'email_existe'): ?>
+                    <div class="alert alert-error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        Este correo ya está registrado. <a href="login.php" style="color:#dc2626;">Inicia sesión</a>
+                    </div>
+                    <?php elseif($_GET['error'] == 'password_debil'): ?>
+                    <div class="alert alert-error">
+                        <i class="fas fa-shield-alt"></i>
+                        La contraseña debe tener al menos 8 caracteres, una mayúscula y un número.
+                    </div>
+                    <?php elseif($_GET['error'] == 'email_invalido'): ?>
+                    <div class="alert alert-error">
+                        <i class="fas fa-envelope"></i>
+                        Email inválido. Por favor, verifica.
+                    </div>
+                    <?php elseif($_GET['error'] == 'nombre_corto'): ?>
+                    <div class="alert alert-error">
+                        <i class="fas fa-user"></i>
+                        El nombre debe tener al menos 3 caracteres.
+                    </div>
+                    <?php endif; ?>
                 <?php endif; ?>
 
-                <form method="POST" action="../../controllers/UsuarioController.php">
+                <form method="POST" action="../../controllers/UsuarioController.php" onsubmit="return validarFormulario()">
                     <input type="hidden" name="accion" value="registro">
+                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
                     
                     <div class="form-group">
                         <label><i class="fas fa-user"></i> Nombre Completo</label>
-                        <input type="text" name="nombre" class="form-control" placeholder="Tu nombre" required>
+                        <input type="text" name="nombre" id="nombre" class="form-control" placeholder="Tu nombre" required>
                     </div>
                     
                     <div class="form-group">
                         <label><i class="fas fa-envelope"></i> Correo Electrónico</label>
-                        <input type="email" name="email" class="form-control" placeholder="tu@email.com" required>
+                        <input type="email" name="email" id="email" class="form-control" placeholder="tu@email.com" required autocomplete="off">
                     </div>
                     
                     <div class="form-group">
                         <label><i class="fas fa-lock"></i> Contraseña</label>
-                        <input type="password" name="password" class="form-control" placeholder="Mínimo 6 caracteres" required>
+                        <input type="password" name="password" id="password" class="form-control" placeholder="Mínimo 8 caracteres" required>
+                        <div class="password-requirements">
+                            Requisitos:
+                            <ul id="password-requirements">
+                                <li id="req-length" class="invalid">✗ Mínimo 8 caracteres</li>
+                                <li id="req-mayus" class="invalid">✗ Al menos una mayúscula</li>
+                                <li id="req-num" class="invalid">✗ Al menos un número</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-lock"></i> Confirmar Contraseña</label>
+                        <input type="password" name="confirm_password" id="confirm_password" class="form-control" placeholder="Repite tu contraseña" required>
                     </div>
                     
                     <button type="submit" class="btn-modern btn-success">
@@ -82,5 +114,60 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function validarPassword() {
+            const password = document.getElementById('password').value;
+            
+            const lengthValid = password.length >= 8;
+            const mayusValid = /[A-Z]/.test(password);
+            const numValid = /[0-9]/.test(password);
+            
+            document.getElementById('req-length').innerHTML = (lengthValid ? '✓' : '✗') + ' Mínimo 8 caracteres';
+            document.getElementById('req-length').className = lengthValid ? 'valid' : 'invalid';
+            
+            document.getElementById('req-mayus').innerHTML = (mayusValid ? '✓' : '✗') + ' Al menos una mayúscula';
+            document.getElementById('req-mayus').className = mayusValid ? 'valid' : 'invalid';
+            
+            document.getElementById('req-num').innerHTML = (numValid ? '✓' : '✗') + ' Al menos un número';
+            document.getElementById('req-num').className = numValid ? 'valid' : 'invalid';
+            
+            return lengthValid && mayusValid && numValid;
+        }
+        
+        function validarFormulario() {
+            if (!validarPassword()) {
+                alert('La contraseña no cumple con los requisitos de seguridad');
+                return false;
+            }
+            
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirm_password').value;
+            
+            if (password !== confirm) {
+                alert('Las contraseñas no coinciden');
+                return false;
+            }
+            
+            const nombre = document.getElementById('nombre').value;
+            if (nombre.length < 3) {
+                alert('El nombre debe tener al menos 3 caracteres');
+                return false;
+            }
+            
+            return true;
+        }
+        
+        document.getElementById('password').addEventListener('keyup', validarPassword);
+        document.getElementById('confirm_password').addEventListener('keyup', function() {
+            const password = document.getElementById('password').value;
+            const confirm = this.value;
+            if (password !== confirm) {
+                this.style.borderColor = '#dc2626';
+            } else {
+                this.style.borderColor = '#2e7d32';
+            }
+        });
+    </script>
 </body>
 </html>
