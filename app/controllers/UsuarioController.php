@@ -1,9 +1,11 @@
 <?php
-require_once '../../config/database.php';
-require_once '../../config/seguridad.php';
-session_start();
+require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../config/seguridad.php';
 
-// Configurar sesión segura
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 Seguridad::configurarSesion();
 
 $db = (new Database())->connect();
@@ -14,18 +16,17 @@ if (!Seguridad::rateLimiting($ip)) {
     die("Demasiados intentos. Por favor, espera un momento.");
 }
 
-if($_POST['accion'] == "registro"){
-    // Validar token CSRF
+// REGISTRO
+if(isset($_POST['accion']) && $_POST['accion'] == "registro"){
+    
     if (!isset($_POST['csrf_token']) || !Seguridad::verificarTokenCSRF($_POST['csrf_token'])) {
         die("Error de seguridad");
     }
     
-    // Limpiar y validar datos
     $nombre = Seguridad::limpiarTexto($_POST['nombre']);
     $email = Seguridad::limpiarEmail($_POST['email']);
     $password = $_POST['password'];
     
-    // Validaciones
     if (!$email) {
         header("Location: ../views/usuario/registro.php?error=email_invalido");
         exit();
@@ -54,16 +55,16 @@ if($_POST['accion'] == "registro"){
     } catch(PDOException $e) {
         if($e->getCode() == 23000) {
             header("Location: ../views/usuario/registro.php?error=email_existe");
-            exit();
         } else {
             header("Location: ../views/usuario/registro.php?error=general");
-            exit();
         }
+        exit();
     }
 }
 
-if($_POST['accion'] == "login"){
-    // Validar token CSRF
+// LOGIN
+if(isset($_POST['accion']) && $_POST['accion'] == "login"){
+    
     if (!isset($_POST['csrf_token']) || !Seguridad::verificarTokenCSRF($_POST['csrf_token'])) {
         die("Error de seguridad");
     }
@@ -76,7 +77,6 @@ if($_POST['accion'] == "login"){
         exit();
     }
     
-    // Verificar si usuario está bloqueado
     if (Seguridad::estaBloqueado($db, $email)) {
         header("Location: ../views/usuario/login.php?error=bloqueado");
         exit();
@@ -87,10 +87,8 @@ if($_POST['accion'] == "login"){
     $usuario = $stmt->fetch();
 
     if($usuario && password_verify($password, $usuario['password'])){
-        // Login exitoso - resetear intentos
         Seguridad::resetearIntentos($db, $email);
         
-        // Actualizar último login
         $stmt = $db->prepare("UPDATE usuarios SET ultimo_login = NOW() WHERE id = ?");
         $stmt->execute([$usuario['id']]);
         
@@ -102,10 +100,12 @@ if($_POST['accion'] == "login"){
         header("Location: ../views/usuario/dashboard.php");
         exit();
     } else {
-        // Login fallido - registrar intento
         Seguridad::registrarIntentoFallido($db, $email);
         header("Location: ../views/usuario/login.php?error=credenciales");
         exit();
     }
 }
+
+header("Location: ../views/usuario/login.php");
+exit();
 ?>

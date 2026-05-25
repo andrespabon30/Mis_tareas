@@ -6,7 +6,7 @@ if(!isset($_SESSION['usuario_id'])){
 }
 
 if(isset($_GET['id'])){
-    require_once '../../../config/database.php';
+    require_once __DIR__ . '/../../../config/database.php';
     $db = (new Database())->connect();
     
     $id = $_GET['id'];

@@ -1,9 +1,6 @@
 <?php
-// Configuración de seguridad - SIN session_start() aquí
-
 class Seguridad {
     
-    // Generar token CSRF
     public static function generarTokenCSRF() {
         if (empty($_SESSION['csrf_token'])) {
             $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -11,7 +8,6 @@ class Seguridad {
         return $_SESSION['csrf_token'];
     }
     
-    // Verificar token CSRF
     public static function verificarTokenCSRF($token) {
         if (!isset($_SESSION['csrf_token']) || $token !== $_SESSION['csrf_token']) {
             die("Error de seguridad: Token CSRF inválido.");
@@ -19,32 +15,22 @@ class Seguridad {
         return true;
     }
     
-    // Limpiar y validar email
     public static function limpiarEmail($email) {
         $email = filter_var(trim($email), FILTER_SANITIZE_EMAIL);
         return filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : false;
     }
     
-    // Limpiar texto
     public static function limpiarTexto($texto) {
         return htmlspecialchars(trim($texto), ENT_QUOTES, 'UTF-8');
     }
     
-    // Validar contraseña (mínimo 8 caracteres, 1 mayúscula, 1 número)
     public static function validarPassword($password) {
-        if (strlen($password) < 8) {
-            return false;
-        }
-        if (!preg_match('/[A-Z]/', $password)) {
-            return false;
-        }
-        if (!preg_match('/[0-9]/', $password)) {
-            return false;
-        }
+        if (strlen($password) < 8) return false;
+        if (!preg_match('/[A-Z]/', $password)) return false;
+        if (!preg_match('/[0-9]/', $password)) return false;
         return true;
     }
     
-    // Registrar intento de login fallido
     public static function registrarIntentoFallido($db, $email) {
         $stmt = $db->prepare("UPDATE usuarios SET intentos_fallidos = intentos_fallidos + 1 WHERE email = ?");
         $stmt->execute([$email]);
@@ -60,7 +46,6 @@ class Seguridad {
         }
     }
     
-    // Verificar si usuario está bloqueado
     public static function estaBloqueado($db, $email) {
         $stmt = $db->prepare("SELECT bloqueado_hasta FROM usuarios WHERE email = ?");
         $stmt->execute([$email]);
@@ -72,17 +57,14 @@ class Seguridad {
         return false;
     }
     
-    // Resetear intentos fallidos
     public static function resetearIntentos($db, $email) {
         $stmt = $db->prepare("UPDATE usuarios SET intentos_fallidos = 0, bloqueado_hasta = NULL WHERE email = ?");
         $stmt->execute([$email]);
     }
     
-    // Configurar sesión segura
     public static function configurarSesion() {
         ini_set('session.cookie_httponly', 1);
         ini_set('session.use_strict_mode', 1);
-        // ini_set('session.cookie_secure', 1); // Solo HTTPS - descomentar si tienes SSL
         ini_set('session.cookie_samesite', 'Strict');
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
@@ -90,7 +72,6 @@ class Seguridad {
         session_regenerate_id(true);
     }
     
-    // Rate limiting por IP
     public static function rateLimiting($ip) {
         $carpeta_logs = __DIR__ . '/../logs/';
         if (!file_exists($carpeta_logs)) {
